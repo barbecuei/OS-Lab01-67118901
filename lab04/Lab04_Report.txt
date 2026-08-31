@@ -1,0 +1,89 @@
+======================================================
+COE67-222 Operating Systems - Lab 04 Report
+ชื่อ: ณัฐปภัสร์ ปุริมายะตา
+รหัสนักศึกษา: 67118901
+======================================================
+
+1. Deadlock (Phase 2):
+อธิบายทีละขั้นตอนว่าเงื่อนไข "Circular Wait" เกิดขึ้นระหว่าง Model A และ Model B ในไฟล์ deadlock_simulation.py ได้อย่างไร
+
+คำตอบ:
+Deadlock เกิดขึ้นตามลำดับดังนี้
+
+1. Model A เริ่มทำงานและขอใช้งาน GPU 0 ด้วยคำสั่ง acquire() จากนั้น Model A สามารถล็อก GPU 0 ได้สำเร็จ
+2. ในขณะเดียวกัน Model B เริ่มทำงานและขอใช้งาน GPU 1 จากนั้น Model B สามารถล็อก GPU 1 ได้สำเร็จ
+3. หลังจากนั้น Model A ต้องการ GPU 1 เพิ่มเพื่อทำงานต่อ แต่ GPU 1 ถูก Model B ล็อกไว้อยู่แล้ว ดังนั้น Model A จึงต้องรอ
+4. ส่วน Model B ต้องการ GPU 0 เพื่อทำงานต่อ แต่ GPU 0 ถูก Model A ล็อกไว้อยู่แล้ว ดังนั้น Model B จึงต้องรอเช่นกัน
+5. สถานการณ์จึงกลายเป็นว่า Model A ถือ GPU 0 และรอ GPU 1 ในขณะที่ Model B ถือ GPU 1 และรอ GPU 0
+6. ทั้งสอง Model รอ Resource ที่อีกฝ่ายถืออยู่ ทำให้เกิดการรอเป็นวงกลม หรือ Circular Wait
+7. ไม่มี Model ใดสามารถทำงานต่อหรือปล่อย Resource ที่ตัวเองถืออยู่ได้ ทำให้โปรแกรมเกิด Deadlock และค้างอยู่ตลอด
+จากการทดลอง โปรแกรมไม่สามารถแสดงข้อความ "Cluster Execution Completed" ได้ และจำเป็นต้องกด Ctrl + C เพื่อหยุดโปรแกรม
+
+2. การแก้ปัญหา Deadlock (Phase 3):
+เมื่อแก้ไข deadlock_avoidance.py โดยให้ Model B ขอ GPU 0 ก่อนเหมือนกับ Model A การเปลี่ยนแปลงนี้ทำลายเงื่อนไข Circular Wait ได้อย่างไร
+
+คำตอบ:
+ใน deadlock_avoidance.py ทั้ง Model A และ Model B ถูกกำหนดให้ขอ Resource ตามลำดับเดียวกัน คือ
+GPU 0 -> GPU 1
+ตัวอย่างเช่น หาก Model A ได้ GPU 0 ก่อน Model B จะต้องรอ GPU 0 โดยที่ Model B ยังไม่ได้ถือ GPU 1 ไว้
+Model A จึงสามารถขอ GPU 1 ต่อได้ เมื่อทำงานเสร็จแล้ว Model A จะปล่อยทั้ง GPU 1 และ GPU 0
+หลังจากนั้น Model B จึงสามารถขอ GPU 0 และ GPU 1 ตามลำดับ และทำงานจนเสร็จได้
+เนื่องจากทุก Model ขอ Resource ตามลำดับเดียวกัน จึงไม่สามารถเกิดสถานการณ์ที่ Model A ถือ Resource หนึ่งและรอ Model B ขณะที่ Model B ถืออีก Resource และรอ Model A ได้
+ดังนั้น Circular Wait จึงถูกทำลาย และสามารถป้องกัน Deadlock ได้ด้วยวิธี Strict Lock Ordering หรือ Resource Hierarchy
+
+3. Starvation กับ Deadlock (Phase 4):
+
+3.1 ผลลัพธ์สุดท้ายของโปรแกรม Starvation แตกต่างจากโปรแกรม Deadlock ใน Phase 2 อย่างไร
+
+คำตอบ:
+Deadlock ทำให้ Thread ที่เกี่ยวข้องติดอยู่ในสถานะรอกัน และไม่มี Thread ใดสามารถทำงานต่อได้ โปรแกรมจึงค้างและไม่สามารถจบการทำงานเองได้
+จากการทดลอง deadlock_simulation.py โปรแกรมค้างอยู่ และจำเป็นต้องกด Ctrl + C เพื่อหยุดการทำงาน
+แต่ Starvation แตกต่างออกไป เพราะระบบโดยรวมยังสามารถทำงานต่อและจบโปรแกรมได้ เพียงแต่บาง Thread ได้รับโอกาสใช้ Resource มากกว่า Thread อื่นอย่างมาก
+จากการทดลอง starvation_sim.py ได้ผลดังนี้
+Greedy_Model_A: 24056 times
+Greedy_Model_B: 24054 times
+Polite_Model: 297 times
+จะเห็นว่า Greedy_Model_A และ Greedy_Model_B สามารถเข้าถึง Resource ได้มากกว่า 24,000 ครั้ง ในขณะที่ Polite_Model ได้เพียง 297 ครั้ง
+ดังนั้นระบบยังทำงานต่อได้และไม่ได้ค้างเหมือน Deadlock แต่ Polite_Model ได้รับโอกาสใช้ Resource น้อยมาก ซึ่งเป็นลักษณะของ Starvation
+
+3.2 Process Scheduler สามารถใช้เทคนิค Aging เพื่อช่วยให้ Polite_Model ได้รับ CPU อย่างเป็นธรรมมากขึ้นได้อย่างไร
+
+คำตอบ:
+Aging คือเทคนิคที่ Process Scheduler ค่อย ๆ เพิ่ม Priority ให้กับ Process หรือ Thread ที่รอ CPU หรือ Resource เป็นเวลานาน
+ในกรณีของ Polite_Model หากมันต้องรอเป็นเวลานาน Scheduler จะเพิ่ม Priority ของ Polite_Model ขึ้นเรื่อย ๆ
+เมื่อ Priority สูงขึ้น Polite_Model จะมีโอกาสถูกเลือกให้ทำงานมากขึ้น แทนที่จะปล่อยให้ Greedy_Model_A และ Greedy_Model_B ได้ Resource อยู่ตลอดเวลา
+วิธีนี้ช่วยป้องกันไม่ให้ Process ที่มี Priority ต่ำต้องรออย่างไม่มีกำหนด และทำให้แต่ละ Process ได้รับโอกาสใช้ CPU หรือ Resource อย่างเป็นธรรมมากขึ้น
+
+4. Deadlock Detection & Recovery:
+
+4.1 parameter timeout จำลองกลไก Deadlock Detection ของ Operating System ได้อย่างไร
+
+คำตอบ:
+ใน deadlock_detection.py มีการกำหนดค่า
+TIMEOUT = 2.0
+และ Model A ใช้คำสั่ง
+gpu_1_lock.acquire(timeout=TIMEOUT)
+หมายความว่า Model A จะพยายามขอ GPU 1 และรอได้สูงสุด 2 วินาที
+ถ้าครบ 2 วินาทีแล้ว Model A ยังไม่สามารถ acquire GPU 1 ได้ คำสั่ง acquire() จะคืนค่า False
+โปรแกรมจึงใช้การรอนานเกินเวลาที่กำหนดเป็นสัญญาณว่าระบบอาจกำลังอยู่ในสถานการณ์ Deadlock
+จากการทดลอง เมื่อ Model A รอ GPU 1 เกินเวลาที่กำหนด โปรแกรมแสดงข้อความ
+[OS WATCHDOG] Deadlock Detected on Model A!
+จึงเป็นการจำลองกลไกตรวจจับ Deadlock ของระบบปฏิบัติการโดยใช้ Timeout
+
+4.2 เมื่อระบบตรวจพบ Deadlock แล้ว Model A ทำขั้นตอนใดเพื่อ Recovery และทำให้ระบบสามารถทำงานต่อได้
+
+คำตอบ:
+เมื่อ Model A ไม่สามารถ acquire GPU 1 ได้ภายในเวลา 2 วินาที โปรแกรมจะเข้าสู่เงื่อนไข
+if not acquired:
+จากนั้น Model A จะทำ Recovery โดยใช้คำสั่ง
+gpu_0_lock.release()
+เพื่อปล่อย GPU 0 ที่ Model A กำลังถืออยู่
+หลังจากปล่อย GPU 0 แล้ว Model A จะออกจากฟังก์ชันด้วยคำสั่ง return
+เมื่อ GPU 0 ถูกปล่อย Model B ซึ่งกำลังรอ GPU 0 อยู่ก็สามารถ acquire GPU 0 ได้สำเร็จ และสามารถทำงานต่อจนเสร็จได้
+จากการทดลอง โปรแกรมแสดงข้อความ
+[RECOVERY] Model A is releasing GPU 0 to prevent total system freeze...
+จากนั้น Model B สามารถทำงานสำเร็จ และโปรแกรมจบด้วยข้อความ
+
+--- System Finished (Recovered Successfully) ---
+
+ดังนั้นการ Recovery ในการทดลองนี้คือการให้ Model A ยอมปล่อย Resource ที่ตัวเองถืออยู่ เพื่อทำลายการรอกันและเปิดโอกาสให้ Model B สามารถทำงานต่อได้
